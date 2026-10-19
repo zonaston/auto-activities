@@ -1,5 +1,5 @@
 /****************************************************************************
- ** Auto Activities (Personal) - Show overview when there are no windows.
+ ** Auto Activities - Show overview when there are no windows.
  ** Copyright (C) 2021  jan Sena <mi-jan-sena@proton.me> and Cleo Menezes Jr.
  **
  ** This program is free software: you can redistribute it and/or modify

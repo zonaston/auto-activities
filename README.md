@@ -1,7 +1,7 @@
-# Auto Activities (Personal)
+# Auto Activities
 
 Open the Activities overview when the last window on a workspace closes, and
-optionally hide it when a new window opens. A personal fork maintained by
+optionally hide it when a new window opens. A GNOME 50/51 fork maintained by
 [zonaston](https://github.com/zonaston), targeting GNOME Shell 50 and 51.
 
 Based on [CleoMenezesJr/auto-activities](https://github.com/CleoMenezesJr/auto-activities),
@@ -25,10 +25,10 @@ headless integration test; GNOME 50 still needs a runtime check on that version.
 
 This fork uses its own UUID, `auto-activities@zonaston.github.io`, so updates for
 the upstream extension in Extension Manager cannot replace it. Updates to this
-personal copy are installed manually from this repository.
+fork are installed manually from this repository.
 
 The existing settings schema and path are retained, so your preferences carry over.
-Disable or uninstall the upstream copy before enabling the personal copy; running
+Disable or uninstall the upstream copy before enabling this fork; running
 both at once would duplicate the overview behaviour.
 
 ## Build and install
