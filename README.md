@@ -1,7 +1,10 @@
-# Auto Activities — personal GNOME 50/51 fork
+# Auto Activities (Personal)
 
-Show the Activities overview when there are no windows, and hide it when a new
-window opens. Based on [CleoMenezesJr/auto-activities](https://github.com/CleoMenezesJr/auto-activities),
+Open the Activities overview when the last window on a workspace closes, and
+optionally hide it when a new window opens. A personal fork maintained by
+[zonaston](https://github.com/zonaston), targeting GNOME Shell 50 and 51.
+
+Based on [CleoMenezesJr/auto-activities](https://github.com/CleoMenezesJr/auto-activities),
 by Cleo Menezes Jr. and jan Sena. Licensed under GPL-3.0-or-later; see [LICENSE](LICENSE).
 
 This branch targets **GNOME Shell 50 and 51**. GNOME 51.1 has an automated
@@ -20,31 +23,46 @@ headless integration test; GNOME 50 still needs a runtime check on that version.
 - Ignore desktop/dock windows and avoid opening the overview on the lock/login screen.
 - Package only extension files when installing, rather than copying the Git checkout.
 
-The upstream UUID and settings schema are retained so existing preferences continue
-to work. This fork replaces the upstream extension when installed; the two versions
-cannot run side by side. The GNOME Extensions website supplies upstream, not this fork.
-An upstream update through Extension Manager may replace the personal copy.
+This fork uses its own UUID, `auto-activities@zonaston.github.io`, so updates for
+the upstream extension in Extension Manager cannot replace it. Updates to this
+personal copy are installed manually from this repository.
+
+The existing settings schema and path are retained, so your preferences carry over.
+Disable or uninstall the upstream copy before enabling the personal copy; running
+both at once would duplicate the overview behaviour.
 
 ## Build and install
 
 ```bash
 git clone https://github.com/zonaston/auto-activities.git
 cd auto-activities
-git switch gnome-50-51
 make pack
-gnome-extensions install --force dist/auto-activities@CleoMenezesJr.github.io.shell-extension.zip
+gnome-extensions install --force dist/auto-activities@zonaston.github.io.shell-extension.zip
 ```
 
 Log out and back in after the first install (or when replacing already-loaded
 JavaScript), then enable the extension:
 
 ```bash
-gnome-extensions enable auto-activities@CleoMenezesJr.github.io
-gnome-extensions prefs auto-activities@CleoMenezesJr.github.io
+gnome-extensions enable auto-activities@zonaston.github.io
+gnome-extensions prefs auto-activities@zonaston.github.io
 ```
 
 Alternatively, `make install` installs the source files for the current user.
 Use `make uninstall` to remove that copy.
+
+## Migrating from the earlier personal build
+
+Earlier builds used upstream's UUID. Install the new ZIP as above, then disable
+and remove the old copy (this keeps the saved preferences):
+
+```bash
+gnome-extensions disable auto-activities@CleoMenezesJr.github.io
+gnome-extensions uninstall auto-activities@CleoMenezesJr.github.io
+```
+
+Log out and back in, then enable `auto-activities@zonaston.github.io`.
+The extension now appears as **Auto Activities (Personal)** in Extension Manager.
 
 ## Verification
 
@@ -53,7 +71,7 @@ make test
 make pack
 GDK_BACKEND=wayland GTK_A11Y=none timeout 60s \
   dbus-run-session -- gnome-shell-test-tool --headless --disable-animations \
-  --extension dist/auto-activities@CleoMenezesJr.github.io.shell-extension.zip \
+  --extension dist/auto-activities@zonaston.github.io.shell-extension.zip \
   tests/shell.js
 ```
 

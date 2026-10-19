@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 
-const uuid = 'auto-activities@CleoMenezesJr.github.io';
+const uuid = 'auto-activities@zonaston.github.io';
 function assert(value, message) { if (!value) throw new Error(message); }
 export async function run() {
   await Scripting.sleep(1500);

@@ -1,4 +1,4 @@
-UUID = auto-activities@CleoMenezesJr.github.io
+UUID = auto-activities@zonaston.github.io
 INSTALLBASE ?= $(if $(DESTDIR),$(DESTDIR)/usr/share,$(HOME)/.local/share)/gnome-shell/extensions
 EXTENSION_FILES = extension.js autoActivities.js metadata.json prefs.js prefs.ui LICENSE
 

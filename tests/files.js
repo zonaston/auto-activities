@@ -5,7 +5,7 @@ import Gio from 'gi://Gio';
 
 export async function run() {
   await Scripting.sleep(1500);
-  const extension = Main.extensionManager.lookup('auto-activities@CleoMenezesJr.github.io');
+  const extension = Main.extensionManager.lookup('auto-activities@zonaston.github.io');
   if (extension?.state !== 1) throw new Error('Extension failed to enable');
   const settings = extension.stateObj.getSettings();
   settings.set_boolean('skip-last-workspace', true);

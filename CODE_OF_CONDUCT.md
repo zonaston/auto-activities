@@ -1,7 +1,7 @@
-# Community Conduct Guidlines
+# Community conduct
 
-Much like a good many other open source projects, this is not a democracy. At best, it's a meritocracy, at worst it's a dictatorship. At any point you are unhappy with the direction that it's going, you are free to fork it and go your own way.
+This is a personal fork maintained by zonaston. If you open an issue or pull
+request, please keep discussion respectful and focused on the extension.
 
-Other than that, basically just be cool. If you're cool, I'll be cool and we're all cool. Cool? Do we really need any other rules?
-
-The owner of this repository (Cleo Menezes Jr.) reserves the right, at his whim, to decide what "cool" means at any particular moment. But as a guideline, "cool" is generally defined as being kind and respectful to others.
+The original authors are credited in the README and source files. Their work
+remains covered by the licence in LICENSE.

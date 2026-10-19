@@ -1,14 +1,14 @@
 {
-  "name": "Auto Activities",
-  "description": "Show activities overview when there are no windows, or hide it when there are new windows. Personal GNOME 50/51 fork of Auto Activities by Cleo Menezes Jr. and jan Sena.",
-  "uuid": "auto-activities@CleoMenezesJr.github.io",
+  "name": "Auto Activities (Personal)",
+  "description": "Open the Activities overview when the last window on a workspace closes, and optionally hide it when a new window opens.\n\nPersonal GNOME 50/51 fork maintained by zonaston, based on Auto Activities by Cleo Menezes Jr. and jan Sena. Uses a separate extension identity and manual updates from GitHub.",
+  "uuid": "auto-activities@zonaston.github.io",
   "shell-version": [
     "50",
     "51"
   ],
   "url": "https://github.com/zonaston/auto-activities",
   "original-author": "mi-jan-sena@proton.me",
-  "version-name": "51.0.1-personal",
+  "version-name": "51.0.2 personal",
   "gettext-domain": "auto-activities",
   "settings-schema": "org.gnome.shell.extensions.auto-activities"
 }
