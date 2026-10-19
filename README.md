@@ -1,38 +1,70 @@
-# Auto Activities
-Show activities overview when there are no windows, or hide it when there are new windows on GNOME.
+# Auto Activities — personal GNOME 50/51 fork
 
-[![License][license-badge]][license-link]
-[![Latest Release][release-badge]][release-link]
-[![Last Commit][commit-badge]][commit-link]
+Show the Activities overview when there are no windows, and hide it when a new
+window opens. Based on [CleoMenezesJr/auto-activities](https://github.com/CleoMenezesJr/auto-activities),
+by Cleo Menezes Jr. and jan Sena. Licensed under GPL-3.0-or-later; see [LICENSE](LICENSE).
 
-[![Screenshot][screenshot-img]][extension-link]
+This branch targets **GNOME Shell 50 and 51**. GNOME 51.1 has an automated
+headless integration test; GNOME 50 still needs a runtime check on that version.
 
-## Installation
-This extension is available on **GNOME 42** or newer versions.
+## Changes in this fork
 
-### GNOME Extensions
+- Declare GNOME 50/51 support and use a plain JavaScript signal manager.
+- Keep workspace signals attached to their original workspace objects, including
+  when workspaces are reordered or removed.
+- Coalesce pending window checks and cancel them when disabling the extension.
+- Handle closing windows without a workspace and count sticky windows correctly.
+- Apply “Last Workspace” only to the last workspace, rather than suppressing all
+  workspace-switch checks. When enabled, that workspace never auto-opens the overview.
+- Use the primary monitor for monitor isolation, matching where the overview opens.
+- Ignore desktop/dock windows and avoid opening the overview on the lock/login screen.
+- Package only extension files when installing, rather than copying the Git checkout.
 
-You can install the extension [here](https://extensions.gnome.org/extension/5500/auto-activities/) from GNOME Extensions website.
+The upstream UUID and settings schema are retained so existing preferences continue
+to work. This fork replaces the upstream extension when installed; the two versions
+cannot run side by side. The GNOME Extensions website supplies upstream, not this fork.
+An upstream update through Extension Manager may replace the personal copy.
 
-### From Source
+## Build and install
 
 ```bash
-$ git clone https://github.com/CleoMenezesJr/auto-activities
-$ cd auto-activities
-$ make install
+git clone https://github.com/zonaston/auto-activities.git
+cd auto-activities
+git switch gnome-50-51
+make pack
+gnome-extensions install --force dist/auto-activities@CleoMenezesJr.github.io.shell-extension.zip
 ```
 
-You can enable the extension using GNOME Extensions.
+Log out and back in after the first install (or when replacing already-loaded
+JavaScript), then enable the extension:
 
 ```bash
-$ gnome-extensions enable auto-activities@CleoMenezesJr.github.io
+gnome-extensions enable auto-activities@CleoMenezesJr.github.io
+gnome-extensions prefs auto-activities@CleoMenezesJr.github.io
 ```
 
-[license-badge]: https://img.shields.io/github/license/CleoMenezesJr/auto-activities?style=for-the-badge
-[license-link]: https://github.com/CleoMenezesJr/auto-activities/blob/master/LICENSE
-[release-badge]: https://img.shields.io/github/v/release/CleoMenezesJr/auto-activities?style=for-the-badge
-[release-link]: https://github.com/CleoMenezesJr/auto-activities/releases/latest
-[commit-badge]: https://img.shields.io/github/last-commit/CleoMenezesJr/auto-activities?style=for-the-badge
-[commit-link]: https://github.com/CleoMenezesJr/auto-activities/commit/
-[screenshot-img]: https://extensions.gnome.org/extension-data/screenshots/screenshot_5500.gif
-[extension-link]: https://extensions.gnome.org/extension/5500/auto-activities/
+Alternatively, `make install` installs the source files for the current user.
+Use `make uninstall` to remove that copy.
+
+## Verification
+
+```bash
+make test
+make pack
+GDK_BACKEND=wayland GTK_A11Y=none timeout 60s \
+  dbus-run-session -- gnome-shell-test-tool --headless --disable-animations \
+  --extension dist/auto-activities@CleoMenezesJr.github.io.shell-extension.zip \
+  tests/shell.js
+```
+
+The GJS regression checks exercise window filtering, primary-monitor changes,
+workspace switches/removals/reordering, timer cancellation and signal cleanup.
+The integration test uses a temporary GNOME configuration and a separate D-Bus
+session to check loading, opening/closing a real test window and disable/re-enable.
+
+Manual checks on each GNOME version: minimize the final window with detection
+on/off, move and reorder workspaces, test the last-workspace option, open the
+preferences, and test monitor isolation on a multi-monitor desktop.
+
+Porting references: [GNOME 50](https://gjs.guide/extensions/upgrading/gnome-shell-50.html)
+and [GNOME 51](https://gjs.guide/extensions/upgrading/gnome-shell-51.html).
