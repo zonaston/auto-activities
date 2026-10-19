@@ -42,7 +42,7 @@ export class AutoActivitiesManager {
       (signal) => global.workspace_manager.connect(signal, () => this._syncWorkspaces()),
     );
     this._managerSignals.push(global.workspace_manager.connect(
-      "active-workspace-changed", () => this._checkAndShowOverview(),
+      "active-workspace-changed", () => this._checkAndShowOverview(true),
     ));
     this._minimizedEvent = global.window_manager.connect(
       "minimize", (_sender, actor) => {
@@ -82,13 +82,14 @@ export class AutoActivitiesManager {
     }
   }
 
-  _checkAndShowOverview() {
+  _checkAndShowOverview(workspaceSwitched = false) {
     if (this._windowCheckingDelay) GLib.Source.remove(this._windowCheckingDelay);
     const delay = Math.max(0, this._settings.get_int("window-checking-delay"));
     this._windowCheckingDelay = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
       this._windowCheckingDelay = 0;
       const workspace = global.workspace_manager.get_active_workspace();
-      if (this._settings.get_boolean("skip-last-workspace") &&
+      // This option applies to workspace navigation, not closing/minimizing windows.
+      if (workspaceSwitched && this._settings.get_boolean("skip-last-workspace") &&
           workspace.index() === global.workspace_manager.n_workspaces - 1)
         return GLib.SOURCE_REMOVE;
 

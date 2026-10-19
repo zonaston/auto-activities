@@ -1,4 +1,5 @@
 // Run in an isolated GNOME Shell session via gnome-shell-test-tool.
+import Gio from 'gi://Gio';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 
@@ -9,11 +10,15 @@ export async function run() {
   const extension = Main.extensionManager.lookup(uuid);
   assert(extension?.state === 1, `Extension failed to enable: ${extension?.error}`);
   const settings = extension.stateObj.getSettings();
-  settings.set_boolean('skip-last-workspace', false);
+  // The final window must reopen overview even on the last/only workspace.
+  settings.set_boolean('skip-last-workspace', true);
+  new Gio.Settings({schema_id: 'org.gnome.mutter'}).set_boolean('dynamic-workspaces', false);
+  new Gio.Settings({schema_id: 'org.gnome.desktop.wm.preferences'}).set_int('num-workspaces', 1);
   settings.set_boolean('show-apps', false);
   settings.set_int('window-checking-delay', 100);
   Main.overview.hide();
   await Scripting.sleep(500);
+  assert(global.workspace_manager.n_workspaces === 1, 'Test must use a single workspace');
   await Scripting.createTestWindow({});
   await Scripting.waitTestWindows();
   await Scripting.sleep(500);

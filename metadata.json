@@ -8,7 +8,7 @@
   ],
   "url": "https://github.com/zonaston/auto-activities",
   "original-author": "mi-jan-sena@proton.me",
-  "version-name": "51.0-personal",
+  "version-name": "51.0.1-personal",
   "gettext-domain": "auto-activities",
   "settings-schema": "org.gnome.shell.extensions.auto-activities"
 }

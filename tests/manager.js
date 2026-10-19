@@ -94,6 +94,15 @@ assert(removed.signals.size === 0, 'removed workspace signals disconnect');
 const added = new Signals(); added.index = () => workspaces.indexOf(added);
 workspaces.push(added); wm.emit('workspace-added', 2);
 assert(added.signals.size === 2, 'new workspace is tracked');
+// Closing/minimizing the last window must work even on the final workspace.
+active = workspaces[workspaces.length - 1];
+const shownBeforeClose = shown;
+values['show-apps'] = false;
+actors = [];
+active.emit('window-removed', window().meta_window);
+flush();
+assert(shown === shownBeforeClose + 1,
+  'ignore-last-workspace must not suppress the final window closing');
 manager._checkAndShowOverview(); manager.destroy();
 assert(timers.size === 0 && wm.signals.size === 0 && global.window_manager.signals.size === 0, 'disable clears timeout and global signals');
 assert(workspaces.every(w => w.signals.size === 0), 'disable clears reordered workspace signals');

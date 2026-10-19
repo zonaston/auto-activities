@@ -15,7 +15,7 @@ headless integration test; GNOME 50 still needs a runtime check on that version.
 - Coalesce pending window checks and cancel them when disabling the extension.
 - Handle closing windows without a workspace and count sticky windows correctly.
 - Apply “Last Workspace” only to the last workspace, rather than suppressing all
-  workspace-switch checks. When enabled, that workspace never auto-opens the overview.
+  workspace-switch checks. Closing or minimizing its final window still opens the overview.
 - Use the primary monitor for monitor isolation, matching where the overview opens.
 - Ignore desktop/dock windows and avoid opening the overview on the lock/login screen.
 - Package only extension files when installing, rather than copying the Git checkout.
@@ -60,7 +60,13 @@ GDK_BACKEND=wayland GTK_A11Y=none timeout 60s \
 The GJS regression checks exercise window filtering, primary-monitor changes,
 workspace switches/removals/reordering, timer cancellation and signal cleanup.
 The integration test uses a temporary GNOME configuration and a separate D-Bus
-session to check loading, opening/closing a real test window and disable/re-enable.
+session to check loading, opening/closing a real test window on the last workspace
+with “Ignore Last Workspace” enabled, and disable/re-enable. Run with animations
+enabled too by omitting `--disable-animations`.
+
+To test Files specifically (requires Nautilus), use the same command with
+`--extra-filter org.gnome.Nautilus --extra-filter Nautilus` and replace
+`tests/shell.js` with `tests/files.js`.
 
 Manual checks on each GNOME version: minimize the final window with detection
 on/off, move and reorder workspaces, test the last-workspace option, open the
