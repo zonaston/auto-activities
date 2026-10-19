@@ -1,31 +1,28 @@
 UUID = auto-activities@CleoMenezesJr.github.io
-ifeq ($(strip $(DESTDIR)),)
-	INSTALLTYPE = local
-	INSTALLBASE = $(HOME)/.local/share/gnome-shell/extensions
-else
-	INSTALLTYPE = system
-	SHARE_PREFIX = $(DESTDIR)/usr/share
-	INSTALLBASE = $(SHARE_PREFIX)/gnome-shell/extensions
-endif
-INSTALLNAME = auto-activities@CleoMenezesJr.github.io
+INSTALLBASE ?= $(if $(DESTDIR),$(DESTDIR)/usr/share,$(HOME)/.local/share)/gnome-shell/extensions
+EXTENSION_FILES = extension.js autoActivities.js metadata.json prefs.js prefs.ui LICENSE
 
-.PHONY: default
+.PHONY: default build pack install uninstall clean test
 default: build
 
-.PHONY: build
 build:
-	glib-compile-schemas ./schemas
+	glib-compile-schemas --strict ./schemas
 
-.PHONY: install
+pack: build
+	mkdir -p dist
+	gnome-extensions pack --force --out-dir=dist --extra-source=autoActivities.js --extra-source=prefs.ui --extra-source=LICENSE .
+
 install: build
-	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
-	mkdir -p $(INSTALLBASE)/$(INSTALLNAME)
-	cp -r ./ $(INSTALLBASE)/$(INSTALLNAME)
+	mkdir -p "$(INSTALLBASE)/$(UUID)/schemas"
+	install -m 644 $(EXTENSION_FILES) "$(INSTALLBASE)/$(UUID)/"
+	install -m 644 schemas/*.xml schemas/gschemas.compiled "$(INSTALLBASE)/$(UUID)/schemas/"
 
-.PHONY: uninstall
 uninstall:
-	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
+	rm -rf "$(INSTALLBASE)/$(UUID)"
 
-.PHONY: clean
 clean:
 	rm -f ./schemas/gschemas.compiled
+	rm -rf dist
+
+test:
+	gjs -m tests/manager.js

@@ -19,210 +19,115 @@
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import GLib from "gi://GLib";
-import GObject from "gi://GObject";
-import St from "gi://St";
 import Meta from "gi://Meta";
 
-let windowCheckingDelay;
 const ignoredWindowTypes = [
+  Meta.WindowType.DESKTOP,
+  Meta.WindowType.DOCK,
   Meta.WindowType.DROPDOWN_MENU,
   Meta.WindowType.NOTIFICATION,
   Meta.WindowType.POPUP_MENU,
   Meta.WindowType.SPLASHSCREEN,
 ];
 
-export const AutoActivitiesManager = GObject.registerClass(
-  class ActivitiesManager extends St.Bin {
-    _init({ remoteModel, monitorIndex, settings }) {
-      this._remoteModel = remoteModel;
-      this._monitorIndex = monitorIndex;
-      this._windowRemovedEvents = [];
-      this._windowAddedEvents = [];
-      this._settings = settings;
+// This manager owns signals and a timeout; it does not need a Clutter actor.
+export class AutoActivitiesManager {
+  constructor({ settings }) {
+    this._settings = settings;
+    this._windowCheckingDelay = 0;
+    this._workspaceSignals = new Map();
+    this._syncWorkspaces();
 
-      for (let i = 0; i < global.workspace_manager.n_workspaces; i++) {
-        this._onWorkspaceAdded(global.workspace_manager, i);
-      }
+    this._managerSignals = ["workspace-added", "workspace-removed"].map(
+      (signal) => global.workspace_manager.connect(signal, () => this._syncWorkspaces()),
+    );
+    this._managerSignals.push(global.workspace_manager.connect(
+      "active-workspace-changed", () => this._checkAndShowOverview(true),
+    ));
+    this._minimizedEvent = global.window_manager.connect(
+      "minimize", (_sender, actor) => {
+        if (this._settings.get_boolean("detect-minimized") &&
+            !ignoredWindowTypes.includes(actor.meta_window.get_window_type()))
+          this._checkAndShowOverview();
+      },
+    );
+  }
 
-      this._workspaceAddedEvent = global.workspace_manager.connect(
-        "workspace-added",
-        this._onWorkspaceAdded.bind(this),
-      );
-      this._workspaceRemovedEvent = global.workspace_manager.connect(
-        "workspace-removed",
-        this._onWorkspaceRemoved.bind(this),
-      );
-      this._workspaceSwitchedEvent = global.workspace_manager.connect(
-        "workspace-switched",
-        this._onWorkspaceSwitched.bind(this),
-      );
-      this._workspacesReorderedEvent = global.workspace_manager.connect(
-        "workspaces-reordered",
-        this._onWorkspacesReordered.bind(this),
-      );
-      this._minimizedEvent = global.window_manager.connect(
-        "minimize",
-        this._onWindowMinimized.bind(this),
-      );
-    }
+  _syncWorkspaces() {
+    const workspaces = new Set();
+    for (let i = 0; i < global.workspace_manager.n_workspaces; i++)
+      workspaces.add(global.workspace_manager.get_workspace_by_index(i));
 
-    _onWorkspaceAdded(_sender, workspaceIndex) {
-      let windowRemovedEvent = global.workspace_manager
-        .get_workspace_by_index(workspaceIndex)
-        .connect("window-removed", this._onWindowRemoved.bind(this));
-      this._windowRemovedEvents.push(windowRemovedEvent);
-      let windowAddedEvent = global.workspace_manager
-        .get_workspace_by_index(workspaceIndex)
-        .connect("window-added", this._onWindowAdded.bind(this));
-      this._windowAddedEvents.push(windowAddedEvent);
-    }
-
-    _onWorkspaceRemoved(_sender, workspaceIndex) {
-      if (workspaceIndex < this._windowRemovedEvents.length) {
-        this._windowRemovedEvents.splice(workspaceIndex);
-        this._windowAddedEvents.splice(workspaceIndex);
+    // Keep IDs with their workspace objects, which remain stable on reordering.
+    for (const [workspace, signals] of this._workspaceSignals) {
+      if (!workspaces.has(workspace)) {
+        signals.forEach((id) => workspace.disconnect(id));
+        this._workspaceSignals.delete(workspace);
       }
     }
-
-    _onWorkspaceSwitched(
-      _sender,
-      _oldWorkspaceIndex,
-      _newWorkspaceIndex,
-      _direction,
-    ) {
-      if (!this._settings.get_boolean("skip-last-workspace")) {
-        this._checkAndShowOverview();
-      }
-    }
-
-    _onWorkspacesReordered(_sender) {
-      let firstWorkspaceIndex = -1;
-      let secondWorkspaceIndex = -1;
-      for (let i = 0; i < this._windowRemovedEvents.length; i++) {
-        if (
-          GObject.signal_handler_is_connected(
-            global.workspace_manager.get_workspace_by_index(i),
-            this._windowRemovedEvents[i],
-          )
-        ) {
-          if (firstWorkspaceIndex < 0) firstWorkspaceIndex = i;
-          else secondWorkspaceIndex = i;
-        }
-      }
-
-      let tempFirstWorkspaceRemovedEvent =
-        this._windowRemovedEvents[firstWorkspaceIndex];
-      this._windowRemovedEvents[firstWorkspaceIndex] =
-        this._windowRemovedEvents[secondWorkspaceIndex];
-      this._windowRemovedEvents[secondWorkspaceIndex] =
-        tempFirstWorkspaceRemovedEvent;
-
-      let tempFirstWorkspaceAddedEvent =
-        this._windowAddedEvents[firstWorkspaceIndex];
-      this._windowAddedEvents[firstWorkspaceIndex] =
-        this._windowAddedEvents[secondWorkspaceIndex];
-      this._windowAddedEvents[secondWorkspaceIndex] =
-        tempFirstWorkspaceAddedEvent;
-    }
-
-    _onWindowMinimized(_sender, actor) {
-      if (
-        this._settings.get_boolean("detect-minimized") &&
-        !ignoredWindowTypes.includes(actor.meta_window.get_window_type())
-      ) {
-        this._checkAndShowOverview();
-      }
-    }
-
-    _onWindowRemoved(_sender, removedWindow) {
-      if (!ignoredWindowTypes.includes(removedWindow.get_window_type())) {
-        this._checkAndShowOverview();
-      }
-    }
-
-    _onWindowAdded(_sender, addedWindow) {
-      if (
-        !ignoredWindowTypes.includes(addedWindow.get_window_type()) &&
-        this._settings.get_boolean("hide-on-new-window")
-      ) {
-        if (Main.overview.visible) Main.overview.hide();
-      }
-    }
-
-    _checkAndShowOverview() {
-      let delay = 0;
-      let delaySetting = this._settings.get_int("window-checking-delay");
-      if (!isNaN(delaySetting) && delaySetting > 0) delay = delaySetting;
-      windowCheckingDelay = GLib.timeout_add(
-        GLib.PRIORITY_DEFAULT,
-        delay,
-        () => {
-          let windows = global.get_window_actors();
-          if (this._settings.get_boolean("isolate-workspaces")) {
-            windows = windows.filter(
-              (window) =>
-                window.meta_window.get_workspace().index() ===
-                  global.workspace_manager.get_active_workspace().index(),
-            );
+    for (const workspace of workspaces) {
+      if (this._workspaceSignals.has(workspace)) continue;
+      this._workspaceSignals.set(workspace, [
+        workspace.connect("window-removed", (_sender, window) => {
+          if (!ignoredWindowTypes.includes(window.get_window_type()))
+            this._checkAndShowOverview();
+        }),
+        workspace.connect("window-added", (_sender, window) => {
+          if (!ignoredWindowTypes.includes(window.get_window_type()) &&
+              this._settings.get_boolean("hide-on-new-window")) {
+            if (Main.overview.visible) Main.overview.hide();
           }
-          if (this._settings.get_boolean("isolate-monitors")) {
-            windows = windows.filter(
-              (window) =>
-                window.meta_window.get_monitor() === this._monitorIndex,
-            );
-          }
-          if (this._settings.get_boolean("skip-taskbar")) {
-            windows = windows.filter(
-              (window) => !window.meta_window.skip_taskbar,
-            );
-          }
-          if (this._settings.get_boolean("detect-minimized")) {
-            windows = windows.filter((window) => !window.meta_window.minimized);
-          }
-
-          if (windows.length < 1) {
-            if (this._settings.get_boolean("show-apps")) {
-              Main.overview
-                .showApps();
-            } else Main.overview.show();
-          }
-        },
-      );
+        }),
+      ]);
     }
+  }
 
-    destroy() {
-      global.workspace_manager.disconnect(this._workspaceAddedEvent);
-      global.workspace_manager.disconnect(this._workspaceRemovedEvent);
-      global.workspace_manager.disconnect(this._workspaceSwitchedEvent);
-      global.workspace_manager.disconnect(this._workspacesReorderedEvent);
-      global.window_manager.disconnect(this._minimizedEvent);
+  _checkAndShowOverview(workspaceSwitched = false) {
+    if (this._windowCheckingDelay) GLib.Source.remove(this._windowCheckingDelay);
+    const delay = Math.max(0, this._settings.get_int("window-checking-delay"));
+    this._windowCheckingDelay = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
+      this._windowCheckingDelay = 0;
+      const workspace = global.workspace_manager.get_active_workspace();
+      // This option applies to workspace navigation, not closing/minimizing windows.
+      if (workspaceSwitched && this._settings.get_boolean("skip-last-workspace") &&
+          workspace.index() === global.workspace_manager.n_workspaces - 1)
+        return GLib.SOURCE_REMOVE;
 
-      for (let i = 0; i < this._windowRemovedEvents.length; i++) {
-        if (
-          GObject.signal_handler_is_connected(
-            global.workspace_manager.get_workspace_by_index(i),
-            this._windowRemovedEvents[i],
-          )
-        ) {
-          global.workspace_manager
-            .get_workspace_by_index(i)
-            .disconnect(this._windowRemovedEvents[i]);
-        }
+      const windows = global.get_window_actors().filter((actor) => {
+        const window = actor.meta_window;
+        // Closing windows may already be detached from their workspace.
+        if (!window.get_workspace() || ignoredWindowTypes.includes(window.get_window_type()))
+          return false;
+        if (this._settings.get_boolean("isolate-workspaces") &&
+            !window.located_on_workspace(workspace)) return false;
+        // The overview opens on the primary monitor.
+        if (this._settings.get_boolean("isolate-monitors") &&
+            window.get_monitor() !== Main.layoutManager.primaryIndex) return false;
+        if (this._settings.get_boolean("skip-taskbar") && window.skip_taskbar)
+          return false;
+        if (this._settings.get_boolean("detect-minimized") && window.minimized)
+          return false;
+        return true;
+      });
+
+      if (windows.length === 0 && !Main.sessionMode.isLocked && !Main.sessionMode.isGreeter) {
+        if (this._settings.get_boolean("show-apps")) Main.overview.showApps();
+        else Main.overview.show();
       }
+      return GLib.SOURCE_REMOVE;
+    });
+  }
 
-      for (let i = 0; i < this._windowAddedEvents.length; i++) {
-        if (
-          GObject.signal_handler_is_connected(
-            global.workspace_manager.get_workspace_by_index(i),
-            this._windowAddedEvents[i],
-          )
-        ) {
-          global.workspace_manager
-            .get_workspace_by_index(i)
-            .disconnect(this._windowAddedEvents[i]);
-        }
-      }
-      GLib.Source.remove(windowCheckingDelay);
+  destroy() {
+    if (this._windowCheckingDelay) {
+      GLib.Source.remove(this._windowCheckingDelay);
+      this._windowCheckingDelay = 0;
     }
-  },
-);
+    this._managerSignals.forEach((id) => global.workspace_manager.disconnect(id));
+    global.window_manager.disconnect(this._minimizedEvent);
+    for (const [workspace, signals] of this._workspaceSignals)
+      signals.forEach((id) => workspace.disconnect(id));
+    this._workspaceSignals.clear();
+    this._settings = null;
+  }
+}

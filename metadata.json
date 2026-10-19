@@ -1,16 +1,14 @@
 {
   "name": "Auto Activities",
-  "description": "Show activities overview when there are no windows, or hide it when there are new windows.\n\nThis extension is a fork of the Auto Activities extension, its former owner transferred its repository to me.",
+  "description": "Show activities overview when there are no windows, or hide it when there are new windows. Personal GNOME 50/51 fork of Auto Activities by Cleo Menezes Jr. and jan Sena.",
   "uuid": "auto-activities@CleoMenezesJr.github.io",
-  "shell-version": ["49"],
-  "url": "https://github.com/CleoMenezesJr/auto-activities",
+  "shell-version": [
+    "50",
+    "51"
+  ],
+  "url": "https://github.com/zonaston/auto-activities",
   "original-author": "mi-jan-sena@proton.me",
-  "version-name": "49.0",
+  "version-name": "51.0.1-personal",
   "gettext-domain": "auto-activities",
-  "settings-schema": "org.gnome.shell.extensions.auto-activities",
-  "donations": {
-    "github": "CleoMenezesJr",
-    "kofi": "cleomenezesjr",
-    "paypal": "CleoMenezesJr"
-  }
+  "settings-schema": "org.gnome.shell.extensions.auto-activities"
 }
