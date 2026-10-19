@@ -51,19 +51,6 @@ gnome-extensions prefs auto-activities@zonaston.github.io
 Alternatively, `make install` installs the source files for the current user.
 Use `make uninstall` to remove that copy.
 
-## Migrating from the earlier personal build
-
-Earlier builds used upstream's UUID. Install the new ZIP as above, then disable
-and remove the old copy (this keeps the saved preferences):
-
-```bash
-gnome-extensions disable auto-activities@CleoMenezesJr.github.io
-gnome-extensions uninstall auto-activities@CleoMenezesJr.github.io
-```
-
-Log out and back in, then enable `auto-activities@zonaston.github.io`.
-The extension now appears as **Auto Activities (Personal)** in Extension Manager.
-
 ## Verification
 
 ```bash
